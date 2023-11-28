@@ -1,0 +1,106 @@
+# Set Up Your Project
+mkdir full-stack-blog
+cd full-stack-blog
+npm init -y
+#  Install Dependencies
+npm install express mongoose body-parser ejs
+# Create the Server (app.js)
+// app.js
+
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const app = express();
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost/blog', { useNewUrlParser: true, useUnifiedTopology: true });
+
+// Create a mongoose schema
+const postSchema = new mongoose.Schema({
+    title: String,
+    content: String
+});
+
+const Post = mongoose.model('Post', postSchema);
+
+app.set('view engine', 'ejs');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
+
+// Home route
+app.get('/', (req, res) => {
+    Post.find({}, (err, posts) => {
+        res.render('home', { posts: posts });
+    });
+});
+
+// Compose route
+app.get('/compose', (req, res) => {
+    res.render('compose');
+});
+
+app.post('/compose', (req, res) => {
+    const post = new Post({
+        title: req.body.title,
+        content: req.body.content
+    });
+
+    post.save((err) => {
+        if (!err) {
+            res.redirect('/');
+        }
+    });
+});
+
+app.listen(3000, () => {
+    console.log('Server started on port 3000');
+});
+# Create Views (views/home.ejs and views/compose.ejs)
+<!-- views/home.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Home</title>
+</head>
+<body>
+    <h1>Blog Home</h1>
+    
+    <% posts.forEach(post => { %>
+        <h2><%= post.title %></h2>
+        <p><%= post.content %></p>
+    <% }); %>
+
+    <a href="/compose">Compose</a>
+</body>
+</html>
+<!-- views/compose.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compose</title>
+</head>
+<body>
+    <h1>Compose</h1>
+    
+    <form action="/compose" method="post">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required>
+
+        <label for="content">Content</label>
+        <textarea id="content" name="content" required></textarea>
+
+        <button type="submit">Publish</button>
+    </form>
+    
+    <a href="/">Home</a>
+</body>
+</html>
+# Run Your Application
+node app.js
+
